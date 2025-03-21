@@ -482,11 +482,15 @@ fn parse_some<T: for<'de> Deserialize<'de>>(value: Option<Value>) -> Result<T, B
 
 /// Handles a `bevy/get` request coming from a client.
 pub fn process_remote_get_request(In(params): In<Option<Value>>, world: &World) -> BrpResult {
+    println!("process_remote_get_request: called");
+
     let BrpGetParams {
         entity,
         components,
         strict,
     } = parse_some(params)?;
+
+    println!("process_remote_get_request: got params");
 
     let app_type_registry = world.resource::<AppTypeRegistry>();
     let type_registry = app_type_registry.read();
@@ -494,7 +498,12 @@ pub fn process_remote_get_request(In(params): In<Option<Value>>, world: &World) 
 
     let response =
         reflect_components_to_response(components, strict, entity, entity_ref, &type_registry)?;
-    serde_json::to_value(response).map_err(BrpError::internal)
+
+    let result = serde_json::to_value(response).map_err(BrpError::internal);
+    let result_str: String = result.clone().unwrap_or_default().to_string();
+    println!("process_remote_get_request: {}", result_str);
+
+    result
 }
 
 /// Handles a `bevy/get_resource` request coming from a client.
